@@ -9,6 +9,8 @@ return value for the function should be the number of pieces hat will be moved.
 If the move is not valid, then the value 0 (zero) should be returned. Note
 here that row and column both start with index 0. 
 '''
+from copy import deepcopy
+
 def isValid(row, state_y_len, col, state_x_len):
     return row >= 0 and row < state_y_len and col >= 0 and col < state_x_len
 
@@ -63,14 +65,19 @@ in particular, should not share memory with the old state.
 def execute_move(state, player, row, column):
     new_state = None
     # Your implementation goes here
-    new_state = state
+    new_state = list()
+    for r in state:
+        tmp_col = list()
+        for c in r:
+            tmp_col.append(c)
+        new_state.append(tmp_col)
     new_state[row][column] = player
 
     state_y_len = mul = len(state)
     state_x_len = len(state[0])
 
     poss_dir_list = ((-1,0), (-1, -1), (-1, 1), (0, -1), (0, 1), (1,1), (1,0), (1,-1))
-    
+
     for poss_dir in poss_dir_list:
         # for a direction, check until the very end
         loc_flip = 0
@@ -134,27 +141,101 @@ Check whether a state is a terminal state.
 def is_terminal_state(state, state_list = None):
     terminal = True
     # Your implementation goes here 
-    # Currently, the terminal state is when no moves can be made
-    for row in state:
-        for col in row:
+    curr_pieces = count_pieces(state)
+    for row_ind, row in enumerate(state):
+        for col_ind, col in enumerate(row):
             if col == ' ':
-                terminal = False
-                return False
-
+                if (get_move_value(state, 'B', row_ind, col_ind) == 0) and (get_move_value(state, 'W', row_ind, col_ind) == 0):
+                    terminal = True
+                else:
+                    return False
     return terminal
 
 '''
 The minimax algorithm. Your implementation should return the best value for the
 given state and player, as well as the next immediate move to take for the player. 
-'''
+''' 
+def utility(state, player):
+    tmp_pieces = count_pieces(state)
+    return tmp_pieces[0] if player == 'B' else tmp_pieces[1]
+
+def getChildren(state, player):
+    children_list = list()
+    for row_ind, row_data in enumerate(state):
+        for col_ind, col in enumerate(row_data):
+            if col != ' ':
+                continue
+            tmp_state = deepcopy(state)
+            tmp_state = execute_move(tmp_state, player, row_ind, col_ind)
+            children_list.append((tmp_state, row_ind, col_ind))
+    return children_list 
+
 def minimax(state, player):
     value = 0
     row = -1
     column = -1
-    # Your implementation goes here 
-    
 
-    return (value, row, column)
+    di = {}
+    # Your implementation goes here     
+    def maxValue(i, state):
+        if i in di:
+            d_tmp = di[i]
+            d_tmp.append(state)
+            di[i] = d_tmp
+        else:
+            di[i] = [state]
+        if is_terminal_state(state):
+            return utility(state, player)
+        v = -9999
+        for a in getChildren(state, player):
+            # print(a[0], 'max')
+            i+=1
+            v = max(v, minValue(i, a[0]))
+        return v
+
+    def minValue(i, state):
+        if i in di:
+            d_tmp = di[i]
+            d_tmp.append(state)
+            di[i] = d_tmp
+        else:
+            di[i] = [state]
+        if is_terminal_state(state):
+            return utility(state, player)
+        v = 9999
+        for a in getChildren(state, player):
+            # print(a[0], 'min')
+            i+=1
+            v = min(v, maxValue(i, a[0]))
+        return v   
+
+    # I KNOW I GOT THE VALUE WRONG HERE BTW
+    # IT IS SUPPOSED TO BE get_move_value
+    value = -1
+    for state in getChildren(state, player):
+        state_val = minValue(1, state[0])
+        if 0 in di:
+            d_tmp = di[0]
+            d_tmp.append(state)
+            di[0] = d_tmp
+        else:
+            di[0] = [state]
+        if value < state_val:
+            value = state_val
+            row = state[1]
+            column = state[2]
+
+    print(di.keys())
+    print(1)
+    for i in di[1]:
+        print(i)
+    print(2)
+    for i in di[2]:
+        print(i)
+    print(3)
+    for i in di[3]:
+        print(i)
+    return value, row, column
 
 '''
 This method should call the minimax algorithm to compute an optimal move sequence
@@ -164,6 +245,15 @@ def full_minimax(state, player):
     value = 0
     move_sequence = []
     # Your implementation goes here 
+    while True:
+        print(state)
+        if is_terminal_state(state):
+            break
+        vrc = minimax(state, player)
+        state = execute_move(state,player,vrc[1],vrc[2])
+        player = 'B' if player == 'W' else 'W'
+        value += vrc[0]
+        move_sequence.append((vrc[1],vrc[2]))
     return (value, move_sequence)
 
 

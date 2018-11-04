@@ -65,8 +65,17 @@ if __name__ == "__main__":
     print "State after executing the move of (3, 3) for player one"
     _print_game_state(mp.execute_move(game_state, p1, 3, 3))
     print 
-    
-    # # Compute best game play with minimax 
+        
+    _print_game_state(game_state)
+
+    game = list()
+    game.append([' ', ' ', ' ', ' '])
+    game.append(['B', 'B', 'B', 'B'])
+    game.append(['W', 'W', 'W', 'W'])
+    game.append([' ', ' ', ' ', ' '])
+
+    print(mp.minimax(game, 'B'))
+    # Compute best game play with minimax 
     # start_time = time.time()
     # print "Running full minimax: " 
     # print mp.full_minimax(game_state, p1)
