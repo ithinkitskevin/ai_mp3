@@ -66,7 +66,7 @@ if __name__ == "__main__":
     _print_game_state(mp.execute_move(game_state, p1, 3, 3))
     print 
         
-    _print_game_state(game_state)
+    # _print_game_state(game_state)
 
     game = list()
     game.append([' ', ' ', ' ', ' '])
@@ -74,14 +74,14 @@ if __name__ == "__main__":
     game.append(['W', 'W', 'W', 'W'])
     game.append([' ', ' ', ' ', ' '])
 
-    print(mp.minimax(game, 'B'))
-    # Compute best game play with minimax 
+    print(mp.minimax(game,p1))
+    #Compute best game play with minimax 
     # start_time = time.time()
     # print "Running full minimax: " 
     # print mp.full_minimax(game_state, p1)
     # elapsed_time = time.time() - start_time
     # print "Elapsed time: " + str(elapsed_time)
-    # print 
+    
 
     # # Compute best game play with alpha-beta pruning
     # start_time = time.time()

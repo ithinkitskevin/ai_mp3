@@ -155,9 +155,10 @@ def is_terminal_state(state, state_list = None):
 The minimax algorithm. Your implementation should return the best value for the
 given state and player, as well as the next immediate move to take for the player. 
 ''' 
-def utility(state, player):
+def utility(state):
     tmp_pieces = count_pieces(state)
-    return tmp_pieces[0] if player == 'B' else tmp_pieces[1]
+    #print(tmp_pieces)
+    return tmp_pieces[0]-tmp_pieces[1]
 
 def getChildren(state, player):
     children_list = list()
@@ -166,76 +167,105 @@ def getChildren(state, player):
             if col != ' ':
                 continue
             tmp_state = deepcopy(state)
-            tmp_state = execute_move(tmp_state, player, row_ind, col_ind)
-            children_list.append((tmp_state, row_ind, col_ind))
+            if (get_move_value(state,player,row_ind, col_ind) > 0):
+                tmp_state = execute_move(tmp_state, player, row_ind, col_ind)
+                children_list.append((tmp_state, row_ind, col_ind))
+                #print("NEW TEMP STATE---------------------------------------------")
+                #for line in tmp_state:
+                 #   print(line)
     return children_list 
+def generateMoves(state,player):
+    move_list = []
+    for row_ind, row in enumerate(state):
+        for col_ind, col in enumerate(row):
+            if col == ' ':
+                if (get_move_value(state,player,row_ind,col_ind) > 0):
+                    tmp_list = [row_ind, col_ind]
+                    move_list.append(tmp_list)
+    return move_list
 
 def minimax(state, player):
-    value = 0
-    row = -1
-    column = -1
+    
+    def max_value(state,player):
+        if (is_terminal_state(state)):
+            return utility(state)
+        
+        v_max = float("-inf")
+        move_list = generateMoves(state,player)
+        for moves in move_list:
+            row = moves[0]
+            col = moves[1]
+            tmp_state = execute_move(state, player, row, col)
+            print("Max-Value: " + str(tmp_state) + str(player) + str(row) + str(col))
+            #Switch Players
+            player = 'B' if player == 'W' else 'W'
+            
+            v_max = max(v_max, min_value(tmp_state, player))
+        return v_max
 
-    di = {}
-    # Your implementation goes here     
-    def maxValue(i, state):
-        if i in di:
-            d_tmp = di[i]
-            d_tmp.append(state)
-            di[i] = d_tmp
+    def min_value(state,player):
+        if (is_terminal_state(state)):
+            return utility(state)
+        v_min = float("inf")
+        move_list = generateMoves(state,player)
+        for moves in move_list:
+            row = moves[0]
+            col = moves[1]
+            tmp_state = execute_move(state, player, row, col)
+            print("Min-Value: " + str(tmp_state) + str(player) + str(row) + str(col))
+            #Switch Players
+            player = 'B' if player == 'W' else 'W'
+
+            v_min = min(v_min, max_value(tmp_state, player))
+        return v_min
+
+
+    #Get all the possible list of moves
+    move_list = generateMoves(state,player)
+
+    best_move_value = 0
+    best_move_row = -1
+    best_move_col = -1
+    counter = 0
+    #If no valid moves, return -1,-1
+    if not move_list:
+        return -1,-1
+    #MinMax Algorithm
+    move_value_list = []
+    for moves in move_list:
+        row = moves[0]
+        col = moves[1]
+        tmp_state = execute_move(state, player, row, col)
+        if player == 'B':
+            move_value = min_value(tmp_state, 'W')
+            if counter == 0:
+                best_move_value = move_value
+                best_move_row = row
+                best_move_col = col
+
+            if move_value > best_move_value:
+                best_move_value = move_value
+                best_move_row = row
+                best_move_col = col
+            counter += 1
         else:
-            di[i] = [state]
-        if is_terminal_state(state):
-            return utility(state, player)
-        v = -9999
-        for a in getChildren(state, player):
-            # print(a[0], 'max')
-            i+=1
-            v = max(v, minValue(i, a[0]))
-        return v
+            move_value = max_value(tmp_state, 'B')
+            if counter == 0:
+                best_move_value = move_value
+                best_move_row = row
+                best_move_col = col
 
-    def minValue(i, state):
-        if i in di:
-            d_tmp = di[i]
-            d_tmp.append(state)
-            di[i] = d_tmp
-        else:
-            di[i] = [state]
-        if is_terminal_state(state):
-            return utility(state, player)
-        v = 9999
-        for a in getChildren(state, player):
-            # print(a[0], 'min')
-            i+=1
-            v = min(v, maxValue(i, a[0]))
-        return v   
+            if move_value < best_move_value:
+                best_move_value = move_value
+                best_move_row = row
+                best_move_col = col
+            counter += 1
+        move_value_list.append(move_value)
 
-    # I KNOW I GOT THE VALUE WRONG HERE BTW
-    # IT IS SUPPOSED TO BE get_move_value
-    value = -1
-    for state in getChildren(state, player):
-        state_val = minValue(1, state[0])
-        if 0 in di:
-            d_tmp = di[0]
-            d_tmp.append(state)
-            di[0] = d_tmp
-        else:
-            di[0] = [state]
-        if value < state_val:
-            value = state_val
-            row = state[1]
-            column = state[2]
+    print(move_value_list)
 
-    print(di.keys())
-    print(1)
-    for i in di[1]:
-        print(i)
-    print(2)
-    for i in di[2]:
-        print(i)
-    print(3)
-    for i in di[3]:
-        print(i)
-    return value, row, column
+
+    return best_move_row, best_move_col
 
 '''
 This method should call the minimax algorithm to compute an optimal move sequence
@@ -245,15 +275,22 @@ def full_minimax(state, player):
     value = 0
     move_sequence = []
     # Your implementation goes here 
-    while True:
-        print(state)
+    count = 0
+    while count < 1:
+        vrc = minimax(state, player)
+        print(count, vrc)
+        state = execute_move(state,player,vrc[0],vrc[1])
+        print("NEW STATE----------------")
+        for line in state:
+            print(line)
+        
+        if (vrc[0] != -1):
+            move_sequence.append((player,vrc[0],vrc[1]))
+        value += vrc[0]
         if is_terminal_state(state):
             break
-        vrc = minimax(state, player)
-        state = execute_move(state,player,vrc[1],vrc[2])
+        count += 1
         player = 'B' if player == 'W' else 'W'
-        value += vrc[0]
-        move_sequence.append((vrc[1],vrc[2]))
     return (value, move_sequence)
 
 
